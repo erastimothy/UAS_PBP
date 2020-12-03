@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     android:background="@android:color/white"
     android:id="@+id/list_orderan_layout"
+    android:focusedByDefault="true"
+    android:focusableInTouchMode="true"
     >
 
     <LinearLayout
