@@ -12,15 +12,20 @@ import com.android.volley.AuthFailureError;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.erastimothy.laundry_app.LoginActivity;
 import com.erastimothy.laundry_app.MainActivity;
+import com.erastimothy.laundry_app.api.LayananAPI;
 import com.erastimothy.laundry_app.api.UserAPI;
+import com.erastimothy.laundry_app.model.Layanan;
 import com.erastimothy.laundry_app.model.User;
+import com.erastimothy.laundry_app.preferences.LayananPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
 import com.android.volley.toolbox.HttpHeaderParser;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.android.volley.Request.Method.GET;
 import static com.android.volley.Request.Method.POST;
 import static com.android.volley.Request.Method.PUT;
 
@@ -135,10 +141,6 @@ public class UserDao {
     }
 
 
-    public void signOut(){
-
-
-    }
 
 
     public void registerAuth(String email, String password,String name,String phoneNumber){
@@ -296,6 +298,62 @@ public class UserDao {
 
         queue.add(stringRequest);
 
+    }
+
+    public void getUserFromDb(int id,User u){
+        RequestQueue queue = Volley.newRequestQueue(activity);
+
+        final JsonObjectRequest stringRequest = new JsonObjectRequest(GET, UserAPI.URL_SHOW+id
+                , null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                try {
+                    JSONObject data = response.getJSONObject("data");
+
+                    if(response.getString("message").equals("Retrive Data Success")){
+
+                        int id = data.getInt("id");
+                        int role_id = data.getInt("role_id");
+                        String name = data.getString("name");
+                        String avatar = data.getString("avatar");
+                        String email = data.getString("email");
+                        String phoneNumber = data.getString("phoneNumber");
+
+                        JSONObject role = new JSONObject(data.getString("role"));
+                        String role_name = role.getString("name");
+
+                        User user =  new User(id,role_id,name,email,null,phoneNumber,avatar,role_name);
+
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                Toast.makeText(activity, error.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        })
+        {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(activity);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+        };
+
+        //Disini proses penambahan request yang sudah kita buat ke reuest queue yang sudah dideklarasi
+        queue.add(stringRequest);
     }
 
 }

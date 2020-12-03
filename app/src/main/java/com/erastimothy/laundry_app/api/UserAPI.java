@@ -7,7 +7,8 @@ public class UserAPI extends ApiURL{
     public static final String URL_LOGIN    = ROOT_API+"login"; //POST
     public static final String URL_LOGOUT    = ROOT_API+"logout"; //POST
     public static final String URL_UPDATE    = ROOT_API+"user/"; //PUT
-    public static final String URL_SELECT    = ROOT_API+"user"; //GET
+    public static final String URL_SELECT    = ROOT_API+"user"; //GET //current login
+    public static final String URL_SHOW    = ROOT_API+"user/"; //GET //by id
 
 //    public static final String URL_DELETE    = ROOT_API+"buku/"; //DELETE   ON WEB ADMIN
 }

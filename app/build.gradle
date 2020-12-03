@@ -71,4 +71,7 @@ dependencies {
     //UNIT TEST
     testCompile 'org.mockito:mockito-all:1.10.19'
 
+    //PDF
+    compile 'com.itextpdf:itextg:5.5.10'
+
 }
