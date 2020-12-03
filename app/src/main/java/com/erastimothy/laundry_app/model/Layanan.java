@@ -1,6 +1,8 @@
 package com.erastimothy.laundry_app.model;
 
-public class Layanan {
+import java.io.Serializable;
+
+public class Layanan implements Serializable {
     private String name;
     private int id;
     private double harga;

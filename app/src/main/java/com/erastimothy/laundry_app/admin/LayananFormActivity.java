@@ -60,9 +60,9 @@ public class LayananFormActivity extends AppCompatActivity {
                 layanan = new Layanan(nama_et.getText().toString().trim(), 0, Double.parseDouble(harga_et.getText().toString().trim()));
 
                 if(bundle == null){ //save data
-                    layananDao.save(layanan, null);
+                    layananDao.save(layanan);
                 }else { //update data
-                    layananDao.save(layanan,bundle.getString("id"));
+                    layananDao.update(layanan,Integer.parseInt(bundle.getString("id")));
                 }
                 clearForm();
                 LayananFormActivity.super.onBackPressed();
@@ -77,7 +77,7 @@ public class LayananFormActivity extends AppCompatActivity {
                 builder.setMessage("Yakin ingin menghapus layanan ? ");
                 builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        layananDao.deleteLayanan(bundle.getString("id"));
+                        layananDao.deleteLayanan(Integer.parseInt(bundle.getString("id")));
                         clearForm();
                         LayananFormActivity.super.onBackPressed();
                         Toast.makeText(LayananFormActivity.this, "Please refresh data to update data", Toast.LENGTH_SHORT).show();

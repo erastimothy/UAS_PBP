@@ -153,14 +153,13 @@ public class OrderLaundryActivity extends AppCompatActivity implements OnMapRead
             @Override
             public void onClick(View view) {
                 if(validateForm()){
-                    laundry = new Laundry(user.getUid(),nama_et.getText().toString().trim(),
-                            dropDownText.getText().toString(),alamat_et.getText().toString().trim(),
-                            "Menunggu Penjemputan", LocalDate.now().toString(),"null",Double.parseDouble(kuantitas_et.getText().toString()),
-                            Double.parseDouble(harga_et.getText().toString()),Double.parseDouble(ongkir_et.getText().toString()),
-                            Double.parseDouble(total_et.getText().toString()));
+                    laundry = new Laundry(0,2,user.getId(),Float.parseFloat(kuantitas_et.getText().toString()),
+                            Double.parseDouble(ongkir_et.getText().toString()),Double.parseDouble(total_et.getText().toString())
+                    ,"Menunggu Penjemputan",alamat_et.getText().toString(),"tanggal");
+
                     laundryDao = new LaundryDao(OrderLaundryActivity.this);
                     //laundryDao.reset();
-                    laundryDao.save(laundry,"");
+                    laundryDao.save(laundry);
 
                     goToOrderDetail(laundry);
 
@@ -238,16 +237,25 @@ public class OrderLaundryActivity extends AppCompatActivity implements OnMapRead
     private void goToOrderDetail(Laundry laundry) {
         Intent intent = new Intent(this, OrderDetailActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putString("alamat",laundry.getAlamat());
-        bundle.putString("biaya_antar",String.valueOf(laundry.getBiaya_antar()));
-        bundle.putString("harga",String.valueOf(laundry.getHarga()));
-        bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal_pembayaran()));
-        bundle.putString("jenis",laundry.getJenis());
-        bundle.putString("kuantitas", String.valueOf(laundry.getKuantitas()));
-        bundle.putString("order_id",laundry.getOrder_id());
-        bundle.putString("nama",laundry.getNama());
-        bundle.putString("tanggal",laundry.getTanggal());
-        bundle.putString("uid",laundry.getUid());
+
+        Layanan layananTemp = new Layanan();
+
+        for (int i =0 ;i< layananList.size(); i++){
+            if(layananList.get(i).getId() == laundry.getService_id()){
+                layananTemp = layananList.get(i);
+            }
+        }
+
+        bundle.putString("alamat",laundry.getAddress());
+        bundle.putString("biaya_antar",String.valueOf(laundry.getShippingcost()));
+        bundle.putString("harga",String.valueOf(layananTemp.getHarga()));
+        bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal()));
+        bundle.putString("jenis",layananTemp.getName());
+        bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
+        bundle.putString("order_id",String.valueOf(laundry.getId()));
+        bundle.putString("nama",user.getName());
+        bundle.putString("tanggal",laundry.getDate());
+        bundle.putString("id",String.valueOf(laundry.getId()));
         bundle.putString("from","order");
         bundle.putString("status",laundry.getStatus());
         intent.putExtra("laundry",bundle);

@@ -3,147 +3,214 @@ package com.erastimothy.laundry_app.dao;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.erastimothy.laundry_app.LoginActivity;
 import com.erastimothy.laundry_app.MainActivity;
+import com.erastimothy.laundry_app.api.UserAPI;
 import com.erastimothy.laundry_app.model.User;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
+import com.android.volley.toolbox.HttpHeaderParser;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.android.volley.Request.Method.POST;
 
 public class UserDao {
-    private FirebaseAuth mAuth;
-    private FirebaseDatabase database;
-    private DatabaseReference reference;
     private Activity activity;
     private String name,phoneNumber,email,password;
     private ProgressDialog progressDialog;
     private User user;
     List<User> listUser;
 
+    public UserDao(){}
     public UserDao(Activity myActivity) {
         activity = myActivity;
-        mAuth = FirebaseAuth.getInstance();
-        //get root database
-        database = FirebaseDatabase.getInstance();
-        //set table
-        reference = database.getReference("users");
+
         progressDialog = new ProgressDialog(activity);
         progressDialog.setMessage("Loading...");
 
     }
 
+
     public void login(String email, String password){
         progressDialog.show();
-        mAuth.signInWithEmailAndPassword(email,password)
-                .addOnCompleteListener(activity, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()){
-                            FirebaseUser fUser = mAuth.getCurrentUser();
-                            final String uid = fUser.getUid();
+        RequestQueue queue = Volley.newRequestQueue(activity);
 
-                            DatabaseReference reference = FirebaseDatabase.getInstance().getReference("users");
-                            Query checkUser = reference.orderByChild("uid").equalTo(uid);
+        //Memulai membuat permintaan request menghapus data ke jaringan
+        StringRequest stringRequest = new StringRequest(POST, UserAPI.URL_LOGIN, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                progressDialog.dismiss();
+                try {
+                    //Mengubah response string menjadi object
+                    JSONObject obj = new JSONObject(response);
 
-                            checkUser.addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    if(snapshot.exists()){
-                                        String name = snapshot.child(uid).child("name").getValue(String.class);
-                                        String email = snapshot.child(uid).child("email").getValue(String.class);
-                                        String password = snapshot.child(uid).child("password").getValue(String.class);
-                                        String phoneNumber = snapshot.child(uid).child("phoneNumber").getValue(String.class);
-                                        Boolean _owner = snapshot.child(uid).child("_owner").getValue(Boolean.class);
-                                        String _uid = snapshot.child(uid).child("uid").getValue(String.class);
+                    Toast.makeText(activity, obj.getString("message"), Toast.LENGTH_SHORT).show();
 
-                                        UserPreferences sessionUser = new UserPreferences(activity);
-                                        sessionUser.createLoginUser(uid,email,password,name,phoneNumber,_owner);
+                    //obj.getString("message") digunakan untuk mengambil pesan status dari response
+                    if(obj.getString("message").equalsIgnoreCase("Login Success"))
+                    {
+                        JSONObject data = new JSONObject(obj.getString("data"));
+                        int id = data.getInt("id");
+                        int role_id = data.getInt("role_id");
+                        String name = data.getString("name");
+                        String avatar = data.getString("avatar");
+                        String email = data.getString("email");
+                        String phoneNumber = data.getString("phoneNumber");
+                        String access_token = obj.getString("access_token");
 
-                                        Intent intent = new Intent(activity, MainActivity.class);
-                                        //define intent from login so doesnt show splash screen
-                                        intent.putExtra("login",true);
-                                        activity.startActivity(intent);
-                                    }
-                                }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(activity, "Canceled", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                        JSONObject role = new JSONObject(data.getString("role"));
+                        String role_name = role.getString("name");
 
-                        } else {
-                            Toast.makeText(activity, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                        progressDialog.dismiss();
+                        UserPreferences sessionUser = new UserPreferences(activity);
+                        sessionUser.createLoginUser(id,email,access_token,name,phoneNumber,role_id,role_name,avatar);
+
+                        Intent intent = new Intent(activity, MainActivity.class);
+                        //define intent from login so doesnt show splash screen
+                        intent.putExtra("login",true);
+                        activity.startActivity(intent);
                     }
+                    //obj.getString("message") digunakan untuk mengambil pesan message dari response
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                progressDialog.dismiss();
+                if (error == null || error.networkResponse == null) {
+                    return;
+                }
+                String body = "";
+                //get status code here
+                final String statusCode = String.valueOf(error.networkResponse.statusCode);
+                //get response body and parse with appropriate encoding
+                try {
+                    body = new String(error.networkResponse.data,"UTF-8");
+                    JSONObject jsonObject = new JSONObject(body);
+                    Toast.makeText(activity, jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                /*
+                    Disini adalah proses memasukan/mengirimkan parameter key dengan data value,
+                    dan nama key nya harus sesuai dengan parameter key yang diminta oleh jaringan
+                    API.
+                */
+                Map<String, String>  params = new HashMap<String, String>();
+                params.put("email", email);
+                params.put("password", password);
 
-                });
+                return params;
+            }
+        };
+
+        queue.add(stringRequest);
     }
 
-    public String getCurrentUid(){
-        return mAuth.getUid();
-    }
 
     public void signOut(){
-        mAuth.signOut();
-        activity.startActivity(new Intent(activity,LoginActivity.class));
-        activity.finish();
-    }
 
-    private void registerUsers(String uid){
-        User user = new User(uid,name,email,password,phoneNumber, false);
-        reference.child(uid).setValue(user);
-        //biar ga auto login
-        mAuth.signOut();
 
     }
+
 
     public void registerAuth(String email, String password,String name,String phoneNumber){
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.password = password;
+
         progressDialog.show();
+        RequestQueue queue = Volley.newRequestQueue(activity);
 
-        mAuth.createUserWithEmailAndPassword(email,password)
-                .addOnCompleteListener(activity, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if(task.isSuccessful()) {
-                            Toast.makeText(activity, "Register Successfull , please login !", Toast.LENGTH_SHORT).show();
-                            FirebaseUser fUser = mAuth.getCurrentUser();
+        //Memulai membuat permintaan request menghapus data ke jaringan
+        StringRequest stringRequest = new StringRequest(POST, UserAPI.URL_REGISTER, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                progressDialog.dismiss();
+                Log.e("REGISTER",response);
+                try {
+                    //Mengubah response string menjadi object
+                    JSONObject obj = new JSONObject(response);
 
-                            //register user to database realtime
-                            registerUsers(fUser.getUid());
-                        }else {
-                            Toast.makeText(activity, "Register Failed : "+task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                    //obj.getString("message") digunakan untuk mengambil pesan message dari response
+                    Toast.makeText(activity, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                progressDialog.dismiss();
+                if (error == null || error.networkResponse == null) {
+                    return;
+                }
+                String body = "";
+                //get status code here
+                final String statusCode = String.valueOf(error.networkResponse.statusCode);
+                //get response body and parse with appropriate encoding
+                try {
+                    body = new String(error.networkResponse.data,"UTF-8");
+                    JSONObject jsonObject = new JSONObject(body);
+                    Toast.makeText(activity, jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                /*
+                    Disini adalah proses memasukan/mengirimkan parameter key dengan data value,
+                    dan nama key nya harus sesuai dengan parameter key yang diminta oleh jaringan
+                    API.
+                */
+                Map<String, String>  params = new HashMap<String, String>();
+                params.put("name", name);
+                params.put("email", email);
+                params.put("password", password);
+                params.put("phoneNumber", phoneNumber);
+
+                return params;
+            }
+        };
+
+        queue.add(stringRequest);
+
         progressDialog.dismiss();
     }
 
     public void updateUser(User _newUser , String uid){
-        reference.child(uid).setValue(user);
-        UserPreferences sessionUser = new UserPreferences(activity);
-        sessionUser.logout();
-        sessionUser.createLoginUser(_newUser.getUid(),_newUser.getEmail(),_newUser.getPassword(),_newUser.getName(),_newUser.getPhoneNumber(),_newUser.is_owner());
+//        reference.child(uid).setValue(user);
+//        UserPreferences sessionUser = new UserPreferences(activity);
+//        sessionUser.logout();
+//        sessionUser.createLoginUser(_newUser.getUid(),_newUser.getEmail(),_newUser.getPassword(),_newUser.getName(),_newUser.getPhoneNumber(),_newUser.is_owner());
     }
 
 }

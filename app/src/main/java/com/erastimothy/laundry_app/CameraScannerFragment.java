@@ -22,8 +22,14 @@ import com.budiyev.android.codescanner.CodeScannerView;
 import com.budiyev.android.codescanner.DecodeCallback;
 import com.erastimothy.laundry_app.admin.EditOrderLaundryActivity;
 import com.erastimothy.laundry_app.dao.LaundryDao;
+import com.erastimothy.laundry_app.dao.LayananDao;
 import com.erastimothy.laundry_app.model.Laundry;
+import com.erastimothy.laundry_app.model.Layanan;
+import com.erastimothy.laundry_app.model.User;
 import com.erastimothy.laundry_app.preferences.LaundryPreferences;
+import com.erastimothy.laundry_app.preferences.LayananPreferences;
+import com.erastimothy.laundry_app.preferences.UserPreferences;
+import com.erastimothy.laundry_app.user.OrderLaundryActivity;
 import com.google.zxing.Result;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.mapboxsdk.maps.Style;
@@ -37,6 +43,12 @@ public class CameraScannerFragment extends Fragment {
     private final int REQUEST_CAMERA_CODE = 102;
     private int status_permission = 0;
     private List<Laundry> laundryList;
+    private LayananDao layananDao;
+    private LayananPreferences layananSP;
+    private List<Layanan> layananList;
+    private UserPreferences userSP;
+    private User user;
+
     public CameraScannerFragment() {
         // Required empty public constructor
     }
@@ -52,6 +64,14 @@ public class CameraScannerFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         laundryList = new ArrayList<>();
+
+        userSP = new UserPreferences(getContext());
+        user = userSP.getUserLoginFromSharedPrefernces();
+        layananSP = new LayananPreferences(getActivity());
+        layananDao = new LayananDao(getActivity());
+
+        layananDao.setAllDataLayanan();
+        layananList = layananSP.getListLayananFromSharedPreferences();
     }
 
     @Override
@@ -86,7 +106,7 @@ public class CameraScannerFragment extends Fragment {
                         Laundry laundry = new Laundry();
 
                         for (int i=0; i < laundryList.size(); i++){
-                            if(laundryList.get(i).getOrder_id().trim().equalsIgnoreCase(order_id.trim())){
+                            if(laundryList.get(i).getId() == Integer.parseInt(order_id)){
                                 laundry = laundryList.get(i);
                             }
                         }
@@ -95,16 +115,25 @@ public class CameraScannerFragment extends Fragment {
                             Intent intent = new Intent(getContext(), EditOrderLaundryActivity.class);
                             Bundle bundle = new Bundle();
 
-                            bundle.putString("alamat",laundry.getAlamat());
-                            bundle.putString("biaya_antar",String.valueOf(laundry.getBiaya_antar()));
-                            bundle.putString("harga",String.valueOf(laundry.getHarga()));
-                            bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal_pembayaran()));
-                            bundle.putString("jenis",laundry.getJenis());
-                            bundle.putString("kuantitas", String.valueOf(laundry.getKuantitas()));
-                            bundle.putString("order_id",laundry.getOrder_id());
-                            bundle.putString("nama",laundry.getNama());
-                            bundle.putString("tanggal",laundry.getTanggal());
-                            bundle.putString("uid",laundry.getUid());
+
+                            Layanan layananTemp = new Layanan();
+
+                            for (int i =0 ;i< layananList.size(); i++){
+                                if(layananList.get(i).getId() == laundry.getService_id()){
+                                    layananTemp = layananList.get(i);
+                                }
+                            }
+
+                            bundle.putString("alamat",laundry.getAddress());
+                            bundle.putString("biaya_antar",String.valueOf(laundry.getShippingcost()));
+                            bundle.putString("harga",String.valueOf(layananTemp.getHarga()));
+                            bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal()));
+                            bundle.putString("jenis",layananTemp.getName());
+                            bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
+                            bundle.putString("order_id",String.valueOf(laundry.getId()));
+                            bundle.putString("nama",user.getName());
+                            bundle.putString("tanggal",laundry.getDate());
+                            bundle.putString("uid",String.valueOf(laundry.getId()));
                             bundle.putString("status",laundry.getStatus());
                             intent.putExtra("laundry",bundle);
 

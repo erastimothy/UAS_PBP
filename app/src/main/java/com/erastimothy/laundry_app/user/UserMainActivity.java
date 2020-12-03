@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.erastimothy.laundry_app.LoginActivity;
 import com.erastimothy.laundry_app.admin.AdminMainActivity;
 import com.erastimothy.laundry_app.dao.UserDao;
 import com.erastimothy.laundry_app.model.User;
@@ -29,10 +30,6 @@ public class UserMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_main);
         userDao = new UserDao(this);
 
-        //get root database
-        database = FirebaseDatabase.getInstance();
-        //set table
-        reference = database.getReference("users");
 
         RelativeLayout signOutMenu = (RelativeLayout) findViewById(R.id.signOutMenu);
         RelativeLayout myAccountMenu = (RelativeLayout) findViewById(R.id.myAccountMenu);
@@ -65,7 +62,8 @@ public class UserMainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int id) {
                         Toast.makeText(UserMainActivity.this, "Bye, " + sessionUser.getUserLoginFromSharedPrefernces().getName(), Toast.LENGTH_SHORT).show();
                         sessionUser.logout();
-                        userDao.signOut();
+                        startActivity(new Intent(UserMainActivity.this, LoginActivity.class));
+                        finish();
                     }
                 });
                 builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -85,12 +83,14 @@ public class UserMainActivity extends AppCompatActivity {
                 User user = sessionUser.getUserLoginFromSharedPrefernces();
 
                 Bundle bundle = new Bundle();
-                bundle.putString("uid", user.getUid());
+                bundle.putInt("id", user.getId());
+                bundle.putInt("role_id", user.getRole_id());
                 bundle.putString("name", user.getName());
                 bundle.putString("email", user.getEmail());
-                bundle.putString("password", user.getPassword());
+                bundle.putString("access_token", user.getAccess_token());
                 bundle.putString("phoneNumber", user.getPhoneNumber());
-                bundle.putBoolean("_owner", user.is_owner);
+                bundle.putString("avatar", user.getAvatar());
+                bundle.putString("role_name", user.getRole_name());
                 Intent intent = new Intent(UserMainActivity.this, MyAccountActivity.class);
                 intent.putExtras(bundle);
                 startActivity(intent);

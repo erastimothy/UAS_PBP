@@ -58,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
             return false;
         }
         if(password_et.getText().length() < 6){
-            Toast.makeText(this, "Please fill password correctly", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Password minimum 6 character", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;

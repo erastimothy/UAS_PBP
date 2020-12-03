@@ -12,12 +12,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.erastimothy.laundry_app.LoginActivity;
 import com.erastimothy.laundry_app.dao.LaundryDao;
 import com.erastimothy.laundry_app.dao.UserDao;
 import com.erastimothy.laundry_app.model.Laundry;
 import com.erastimothy.laundry_app.preferences.LaundryPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
 import com.erastimothy.laundry_app.R;
+import com.erastimothy.laundry_app.user.UserMainActivity;
 import com.google.android.material.card.MaterialCardView;
 
 import java.text.NumberFormat;
@@ -48,7 +50,7 @@ public class AdminMainActivity extends AppCompatActivity {
             for(int i=0; i< laundryList.size(); i++){
                 if(laundryList.get(i).getStatus().trim().equalsIgnoreCase("Pesanan Selesai")){
                     totalPesanan++;
-                    totalPendapatan += laundryList.get(i).getTotal_pembayaran();
+                    totalPendapatan += laundryList.get(i).getTotal();
                 }
             }
         }
@@ -116,7 +118,8 @@ public class AdminMainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int id) {
                         Toast.makeText(AdminMainActivity.this, "Bye, " + sessionUser.getUserLoginFromSharedPrefernces().getName(), Toast.LENGTH_SHORT).show();
                         sessionUser.logout();
-                        userDao.signOut();
+                        startActivity(new Intent(AdminMainActivity.this, LoginActivity.class));
+                        finish();
                     }
                 });
                 builder.setNegativeButton("No", new DialogInterface.OnClickListener() {

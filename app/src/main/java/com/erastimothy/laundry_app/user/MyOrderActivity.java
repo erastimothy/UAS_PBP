@@ -36,12 +36,15 @@ public class MyOrderActivity extends AppCompatActivity {
     private List<Laundry> myLaundryList;
     private List<Laundry> laundryListFull;
     private Laundry laundry;
-    private UserDao userDao;
+    private UserPreferences userSP;
+    private User user;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_order);
-        userDao = new UserDao(this);
+        userSP = new UserPreferences(this);
+        user = userSP.getUserLoginFromSharedPrefernces();
         recyclerView = findViewById(R.id.order_rv);
 
         btnBack = findViewById(R.id.btnBack);
@@ -95,7 +98,7 @@ public class MyOrderActivity extends AppCompatActivity {
         if(laundryListFull != null){
             //assign data only my order not all
             for(int i=0 ; i < laundryListFull.size(); i++){
-                if(laundryListFull.get(i).getUid().trim().equalsIgnoreCase(userDao.getCurrentUid().trim())){
+                if(laundryListFull.get(i).getUser_id() == user.getId()){
                     myLaundryList.add((Laundry) laundryListFull.get(i));
                 }
             }

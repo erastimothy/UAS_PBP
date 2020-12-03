@@ -1,31 +1,38 @@
 package com.erastimothy.laundry_app.model;
 
 
+import java.io.Serializable;
 
-public class User {
-    public String name,email,password,phoneNumber,uid;
-    public boolean is_owner;
+public class User implements Serializable {
+    private int id,role_id;
+    private String name,email,access_token,phoneNumber,avatar,role_name;
 
-    public User(String uid,String name, String email, String password, String phoneNumber,boolean is_owner) {
-        this.uid = uid;
+    public User(int id, int role_id, String name, String email, String access_token, String phoneNumber, String avatar, String role_name) {
+        this.id = id;
+        this.role_id = role_id;
         this.name = name;
         this.email = email;
-        this.password = password;
+        this.access_token = access_token;
         this.phoneNumber = phoneNumber;
-        this.is_owner = is_owner;
+        this.avatar = avatar;
+        this.role_name = role_name;
     }
 
-    public boolean is_owner() {
-        return is_owner;
+    public int getId() {
+        return id;
     }
 
-    public void setIs_owner(boolean is_owner){
-        this.is_owner = is_owner;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public String getUid() {return uid;}
+    public int getRole_id() {
+        return role_id;
+    }
 
-    public void setUid(String uid){this.uid = uid;}
+    public void setRole_id(int role_id) {
+        this.role_id = role_id;
+    }
 
     public String getName() {
         return name;
@@ -37,18 +44,18 @@ public class User {
 
     public String getEmail() {
         return email;
-    }   
+    }
 
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getAccess_token() {
+        return access_token;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setAccess_token(String access_token) {
+        this.access_token = access_token;
     }
 
     public String getPhoneNumber() {
@@ -59,4 +66,19 @@ public class User {
         this.phoneNumber = phoneNumber;
     }
 
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getRole_name() {
+        return role_name;
+    }
+
+    public void setRole_name(String role_name) {
+        this.role_name = role_name;
+    }
 }

@@ -24,9 +24,12 @@ import android.widget.Toast;
 
 import com.erastimothy.laundry_app.R;
 import com.erastimothy.laundry_app.dao.LaundryDao;
+import com.erastimothy.laundry_app.dao.LayananDao;
 import com.erastimothy.laundry_app.model.Laundry;
+import com.erastimothy.laundry_app.model.Layanan;
 import com.erastimothy.laundry_app.model.Toko;
 import com.erastimothy.laundry_app.model.User;
+import com.erastimothy.laundry_app.preferences.LayananPreferences;
 import com.erastimothy.laundry_app.preferences.TokoPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
 import com.erastimothy.laundry_app.user.OrderDetailActivity;
@@ -71,13 +74,16 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
     private TextInputLayout dropDownLayout;
     private AutoCompleteTextView dropDownText;
     private AutoCompleteTextView status_dd;
-    private UserPreferences userSP;
     private TokoPreferences tokoSP;
     private double harga = 0;
     private Toko toko;
     private Laundry laundry;
     private LaundryDao laundryDao;
-    User user;
+    private LayananDao layananDao;
+    private LayananPreferences layananSP;
+    private List<Layanan> layananList;
+    private UserPreferences userSP;
+    private User user;
 
 
     @Override
@@ -91,6 +97,11 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
         toko = tokoSP.getToko();
         user = userSP.getUserLoginFromSharedPrefernces();
 
+        layananSP = new LayananPreferences(this);
+        layananDao = new LayananDao(this);
+
+        layananDao.setAllDataLayanan();
+        layananList = layananSP.getListLayananFromSharedPreferences();
 
         TextInputEditText nama_et = findViewById(R.id.nama_et);
         TextView title_tv = findViewById(R.id.title_tv);
@@ -109,7 +120,7 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
         Bundle bundle = getIntent().getBundleExtra("laundry");
         String orderId = bundle.getString("order_id");
         String tanggal = bundle.getString("tanggal");
-        String user_order_uid = bundle.getString("uid");
+        String user_order_id = bundle.getString("id");
 
         title_tv.setText("#"+orderId);
         nama_et.setText(bundle.getString("nama"));
@@ -155,14 +166,11 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if(validateForm()){
 
-                    Laundry laundry = new Laundry(user_order_uid,nama_et.getText().toString().trim(),
-                            dropDownText.getText().toString(),alamat_et.getText().toString().trim(),
-                            status_dd.getText().toString(), LocalDate.now().toString(),"null",Double.parseDouble(kuantitas_et.getText().toString()),
-                            Double.parseDouble(harga_et.getText().toString()),Double.parseDouble(ongkir_et.getText().toString()),
-                            Double.parseDouble(total_et.getText().toString()));
+                    Laundry laundry = new Laundry(0,1,user.getId(),Float.parseFloat(kuantitas_et.getText().toString()),Double.parseDouble(ongkir_et.getText().toString())
+                            , Double.parseDouble(total_et.getText().toString()),"Menunggu Penjemputan",alamat_et.getText().toString(),"null");
                     laundryDao = new LaundryDao(EditOrderLaundryActivity.this);
                     //laundryDao.reset();
-                    laundryDao.save(laundry,orderId);
+                    laundryDao.save(laundry);
                     laundryDao.setAllDataLaundry();
 
                     goToOrderDetail(laundry);
@@ -219,16 +227,25 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
     private void goToOrderDetail(Laundry laundry) {
         Intent intent = new Intent(this, OrderDetailActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putString("alamat",laundry.getAlamat());
-        bundle.putString("biaya_antar",String.valueOf(laundry.getBiaya_antar()));
-        bundle.putString("harga",String.valueOf(laundry.getHarga()));
-        bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal_pembayaran()));
-        bundle.putString("jenis",laundry.getJenis());
-        bundle.putString("kuantitas", String.valueOf(laundry.getKuantitas()));
-        bundle.putString("order_id",laundry.getOrder_id());
-        bundle.putString("nama",laundry.getNama());
-        bundle.putString("tanggal",laundry.getTanggal());
-        bundle.putString("uid",laundry.getUid());
+
+        Layanan layananTemp = new Layanan();
+
+        for (int i =0 ;i< layananList.size(); i++){
+            if(layananList.get(i).getId() == laundry.getService_id()){
+                layananTemp = layananList.get(i);
+            }
+        }
+
+        bundle.putString("alamat",laundry.getAddress());
+        bundle.putString("biaya_antar",String.valueOf(laundry.getShippingcost()));
+        bundle.putString("harga",String.valueOf(layananTemp.getHarga()));
+        bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal()));
+        bundle.putString("jenis",layananTemp.getName());
+        bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
+        bundle.putString("order_id",String.valueOf(laundry.getId()));
+        bundle.putString("nama",user.getName());
+        bundle.putString("tanggal",laundry.getDate());
+        bundle.putString("uid",String.valueOf(laundry.getId()));
         bundle.putString("status",laundry.getStatus());
         intent.putExtra("laundry",bundle);
 

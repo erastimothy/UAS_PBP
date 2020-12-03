@@ -21,13 +21,10 @@ public class MyAccountActivity extends AppCompatActivity {
 
         Bundle bundle = getIntent().getExtras();
 
-        binding = DataBindingUtil.setContentView(this,R.layout.activity_my_account);
-        user = new User(bundle.getString("uid"),bundle.getString("name"),bundle.getString("email"),bundle.getString("password"),bundle.getString("phoneNumber"),bundle.getBoolean("_owner"));
-        binding.emailEt.setText(user.getEmail());
-        binding.nameEt.setText(user.getName());
-        binding.phoneNumberEt.setText(user.getPhoneNumber());
+        binding.emailEt.setText(bundle.getString("email"));
+        binding.nameEt.setText(bundle.getString("name"));
+        binding.phoneNumberEt.setText(bundle.getString("phoneNumber"));
         //binding.setUserData(user);
-
 
 
 

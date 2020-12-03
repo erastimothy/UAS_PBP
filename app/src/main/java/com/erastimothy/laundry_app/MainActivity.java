@@ -76,10 +76,10 @@ public class MainActivity extends AppCompatActivity {
 
         //if user exist, auto login , go to homepage
         if(user.getName() != null){
-            TokoDao tokoDao = new TokoDao(MainActivity.this);
+            TokoDao tokoDao = new TokoDao(getApplicationContext());
             tokoDao.setTokoFromDatabase();
             Toast.makeText(MainActivity.this, "Welcome back "+user.getName(), Toast.LENGTH_SHORT).show();
-            if(user.is_owner()){
+            if(user.getRole_name()!=null && user.getRole_name().equalsIgnoreCase("admin")){
                 //owner redirect to owner page
                 Intent intent = new Intent(MainActivity.this, AdminMainActivity.class);
                 startActivity(intent);

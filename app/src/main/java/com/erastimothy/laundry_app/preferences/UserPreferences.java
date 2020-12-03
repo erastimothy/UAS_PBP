@@ -15,10 +15,12 @@ public class UserPreferences {
 
     public static final String KEY_EMAIL = "email";
     public static final String KEY_NAME = "name";
-    public static final String KEY_PASSWORD = "pasword";
-    public static final String KEY_UID = "uid";
+    public static final String KEY_ACCESS_TOKEN = "access_token";
+    public static final String KEY_ID = "id";
     public static final String KEY_PHONENUMBER = "phoneNumber";
-    public static final String KEY_OWNER = "_owner";
+    public static final String KEY_AVATAR = "avatar";
+    public static final String KEY_ROLE_ID = "role_id";
+    public static final String KEY_ROLE_NAME = "role_name";
 
     public UserPreferences(Context context) {
         this.context = context;
@@ -26,36 +28,44 @@ public class UserPreferences {
         editor = userSP.edit();
     }
 
-    public void createLoginUser(String uid, String email, String password, String name, String phoneNumber, Boolean owner) {
+    public void createLoginUser(int id, String email, String access_token, String name, String phoneNumber, int role_id, String role_name,String avatar) {
         //assign user login
         editor.putBoolean(IS_LOGIN, true);
 
-        editor.putString(KEY_UID, uid);
+        editor.putInt(KEY_ID, id);
         editor.putString(KEY_EMAIL, email);
-        editor.putString(KEY_PASSWORD, password);
+        editor.putString(KEY_ACCESS_TOKEN, access_token);
         editor.putString(KEY_NAME, name);
+        editor.putString(KEY_ROLE_NAME, role_name);
         editor.putString(KEY_PHONENUMBER, phoneNumber);
-        editor.putBoolean(KEY_OWNER, owner);
+        editor.putString(KEY_AVATAR, avatar);
+        editor.putInt(KEY_ROLE_ID, role_id);
 
         editor.commit();
     }
 
+    public String getAccesToken(){
+        return userSP.getString(KEY_ACCESS_TOKEN,null);
+    }
+
     public User getUserLoginFromSharedPrefernces() {
-        String uid, email, password, name, phoneNumber;
-        Boolean owner;
-        uid = userSP.getString(KEY_UID, null);
+        int id,role_id;
+        String name,email,access_token,phoneNumber,avatar,role_name;
+
+        id = userSP.getInt(KEY_ID,0);
+        role_id = userSP.getInt(KEY_ROLE_ID, 0);
         name = userSP.getString(KEY_NAME, null);
         email = userSP.getString(KEY_EMAIL, null);
-        password = userSP.getString(KEY_PASSWORD, null);
+        access_token = userSP.getString(KEY_ACCESS_TOKEN, null);
         phoneNumber = userSP.getString(KEY_PHONENUMBER, null);
-        owner = userSP.getBoolean(KEY_OWNER, false);
+        avatar = userSP.getString(KEY_AVATAR, null);
+        role_name = userSP.getString(KEY_ROLE_NAME, null);
 
-        user = new User(uid, name, email, password, phoneNumber, owner);
+        user = new User(id,role_id,name,email,access_token,phoneNumber,avatar,role_name);
         return user;
     }
 
     public boolean checkLogin() {
-
         if (userSP.getBoolean(IS_LOGIN, true)) {
             return true;
         } else

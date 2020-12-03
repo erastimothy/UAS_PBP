@@ -20,7 +20,6 @@ public class LayananPreferences {
 
     public static final String KEY_LAYANAN = "layanan";
     public static final String KEY_ALLLAYANAN = "all-layanan";
-    public static final String KEY_MAX_ID = "max-id-layanan";
 
     public LayananPreferences(Context context) {
         this.context = context;
@@ -42,16 +41,6 @@ public class LayananPreferences {
         editor.remove(KEY_LAYANAN);
         editor.putString(KEY_LAYANAN,json);
         editor.commit();
-    }
-
-    public void setLayananMaxId(int id){
-        editor.remove(KEY_MAX_ID);
-        editor.putInt(KEY_MAX_ID,id);
-        editor.commit();
-    }
-
-    public int getLayananMaxId(){
-        return layananSP.getInt(KEY_MAX_ID,0);
     }
 
     public List<Layanan> getListLayananFromSharedPreferences(){

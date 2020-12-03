@@ -100,11 +100,12 @@ public class PengaturanTokoActivity extends AppCompatActivity implements OnMapRe
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toko _toko = new Toko(alamatToko_et.getText().toString(), namaToko_et.getText().toString(), telp_et.getText().toString(), origin.longitude(), origin.latitude());
+                Toko _toko = new Toko(0,alamatToko_et.getText().toString(), namaToko_et.getText().toString(), telp_et.getText().toString(), origin.longitude(), origin.latitude());
                 tokoDao.saveToko(_toko);
                 Toast.makeText(PengaturanTokoActivity.this, "Berhasil menyimpan perubahan!", Toast.LENGTH_SHORT).show();
             }
         });
+
         alamatToko_et.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
