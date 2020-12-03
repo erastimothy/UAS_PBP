@@ -260,7 +260,6 @@ public class OrderDetailActivity extends AppCompatActivity {
         cellSupplier.addElement(userInfo);
         tables.addCell(cellSupplier);
         PdfPCell cellPO = new PdfPCell();
-//TODO 2.4 - Ubah NPM Praktikan dengan NPM anda dan ubah Tanggal Praktikum sesuai tanggal praktikum modul 11 kelas anda
         Paragraph NomorTanggal = new Paragraph("Status : " + statusTv.getText().toString() + "\n\n" +
                 "Tanggal : " + tanggalTv.getText().toString() + "\n",
                 new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 10, com.itextpdf.text.Font.NORMAL, BaseColor.BLACK)
@@ -368,7 +367,6 @@ public class OrderDetailActivity extends AppCompatActivity {
             pdfIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             pdfIntent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
             pdfIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            //TODO 2.6 - Sesuaikan package dengan package yang anda buat
             getApplicationContext().grantUriPermission("com.erastimothy.laundry_app.user", uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(pdfIntent);
         } else {
