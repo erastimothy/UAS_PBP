@@ -16,13 +16,9 @@ import com.erastimothy.laundry_app.dao.UserDao;
 import com.erastimothy.laundry_app.model.User;
 import com.erastimothy.laundry_app.R;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class UserMainActivity extends AppCompatActivity {
     private UserDao userDao;
-    private FirebaseDatabase database;
-    private DatabaseReference reference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

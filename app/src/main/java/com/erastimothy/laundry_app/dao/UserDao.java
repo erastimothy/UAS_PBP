@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.android.volley.Request.Method.POST;
+import static com.android.volley.Request.Method.PUT;
 
 public class UserDao {
     private Activity activity;
@@ -206,11 +207,95 @@ public class UserDao {
         progressDialog.dismiss();
     }
 
-    public void updateUser(User _newUser , String uid){
-//        reference.child(uid).setValue(user);
-//        UserPreferences sessionUser = new UserPreferences(activity);
-//        sessionUser.logout();
-//        sessionUser.createLoginUser(_newUser.getUid(),_newUser.getEmail(),_newUser.getPassword(),_newUser.getName(),_newUser.getPhoneNumber(),_newUser.is_owner());
+    public void updateUser(int id, String name, String email, String password, String phoneNumber){
+        progressDialog.show();
+        RequestQueue queue = Volley.newRequestQueue(activity);
+
+        //Memulai membuat permintaan request menghapus data ke jaringan
+        StringRequest stringRequest = new StringRequest(PUT, UserAPI.URL_UPDATE+id, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                progressDialog.dismiss();
+
+                try {
+                    JSONObject obj = new JSONObject(response);
+
+                    Toast.makeText(activity, obj.getString("message"), Toast.LENGTH_SHORT).show();
+
+                    JSONObject data = new JSONObject(obj.getString("data"));
+                    int id = data.getInt("id");
+                    int role_id = data.getInt("role_id");
+                    String name = data.getString("name");
+                    String avatar = data.getString("avatar");
+                    String email = data.getString("email");
+                    String phoneNumber = data.getString("phoneNumber");
+                    String access_token = obj.getString("access_token");
+
+
+                    JSONObject role = new JSONObject(data.getString("role"));
+                    String role_name = role.getString("name");
+
+                    UserPreferences sessionUser = new UserPreferences(activity);
+                    sessionUser.createLoginUser(id,email,access_token,name,phoneNumber,role_id,role_name,avatar);
+
+                    activity.onBackPressed();
+//                    Intent intent = new Intent(activity, MainActivity.class);
+//                    //define intent from login so doesnt show splash screen
+//                    intent.putExtra("login",true);
+//                    activity.startActivity(intent);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                progressDialog.dismiss();
+                if (error == null || error.networkResponse == null) {
+                    return;
+                }
+                String body = "";
+                //get status code here
+                final String statusCode = String.valueOf(error.networkResponse.statusCode);
+                //get response body and parse with appropriate encoding
+                try {
+                    body = new String(error.networkResponse.data,"UTF-8");
+                    JSONObject jsonObject = new JSONObject(body);
+                    Toast.makeText(activity, jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        })
+        {
+            @Override
+            protected Map<String,String> getParams(){
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("name", name);
+                params.put("email", email);
+                params.put("password", password);
+                params.put("phoneNumber", phoneNumber);
+
+                return params;
+            }
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(activity);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+        };
+        progressDialog.dismiss();
+
+        queue.add(stringRequest);
+
     }
 
 }

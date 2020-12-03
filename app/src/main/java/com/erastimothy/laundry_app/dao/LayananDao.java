@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -27,13 +28,6 @@ import com.erastimothy.laundry_app.preferences.LayananPreferences;
 import com.erastimothy.laundry_app.preferences.TokoPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,20 +52,16 @@ public class LayananDao {
     private SharedPreferences layananSP;
     private SharedPreferences.Editor editor;
     private List<Layanan> layananList;
-    private ProgressDialog progressDialog;
 
     public LayananDao(Context context) {
         this.context = context;
 
         layananList = new ArrayList<>();
-        progressDialog = new ProgressDialog(context);
-        progressDialog.setMessage("Loading...");
     }
 
     public void save(Layanan layanan) {
         LayananPreferences layananPreferences = new LayananPreferences(context);
 
-        progressDialog.show();
         RequestQueue queue = Volley.newRequestQueue(context);
 
         //Memulai membuat permintaan request menghapus data ke jaringan
@@ -79,7 +69,6 @@ public class LayananDao {
             @Override
             public void onResponse(String response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     //Mengubah response string menjadi object
                     JSONObject obj = new JSONObject(response);
@@ -95,10 +84,19 @@ public class LayananDao {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(context, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(context);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
             @Override
             protected Map<String, String> getParams()
             {
@@ -122,15 +120,13 @@ public class LayananDao {
     public void update(Layanan layanan, int id) {
         LayananPreferences layananPreferences = new LayananPreferences(context);
 
-        progressDialog.show();
         RequestQueue queue = Volley.newRequestQueue(context);
 
         //Memulai membuat permintaan request menghapus data ke jaringan
-        StringRequest stringRequest = new StringRequest(PUT, LayananAPI.URL_UPDATE+"/"+id, new Response.Listener<String>() {
+        StringRequest stringRequest = new StringRequest(PUT, LayananAPI.URL_UPDATE+id, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     //Mengubah response string menjadi object
                     JSONObject obj = new JSONObject(response);
@@ -146,24 +142,35 @@ public class LayananDao {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(context, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }){
-            @Override
-            protected Map<String, String> getParams()
-            {
-                /*
-                    Disini adalah proses memasukan/mengirimkan parameter key dengan data value,
-                    dan nama key nya harus sesuai dengan parameter key yang diminta oleh jaringan
-                    API.
-                */
-                Map<String, String>  params = new HashMap<String, String>();
-                params.put("name", layanan.getName());
-                params.put("price", String.valueOf(layanan.getHarga()));
 
-                return params;
-            }
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError
+                {
+                    UserPreferences userSP = new UserPreferences(context);
+
+                    Map<String,String> params = new HashMap<String, String>();
+                    params.put("Content-Type","application/x-www-form-urlencoded");
+                    params.put("Accept","application/json");
+                    params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                    return params;
+                }
+                @Override
+                protected Map<String, String> getParams()
+                {
+                    /*
+                        Disini adalah proses memasukan/mengirimkan parameter key dengan data value,
+                        dan nama key nya harus sesuai dengan parameter key yang diminta oleh jaringan
+                        API.
+                    */
+                    Map<String, String>  params = new HashMap<String, String>();
+                    params.put("name", layanan.getName());
+                    params.put("price", String.valueOf(layanan.getHarga()));
+
+                    return params;
+                }
         };
 
         queue.add(stringRequest);
@@ -173,17 +180,11 @@ public class LayananDao {
     public void setAllDataLayanan() {
         RequestQueue queue = Volley.newRequestQueue(context);
 
-        //Meminta tanggapan string dari URL yang telah disediakan menggunakan method GET
-
-        progressDialog.setProgressStyle(android.app.ProgressDialog.STYLE_SPINNER);
-        progressDialog.show();
-
         final JsonObjectRequest stringRequest = new JsonObjectRequest(GET, LayananAPI.URL_SELECT
                 , null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     Log.d("Layanan", response.getString("message"));
 
@@ -197,7 +198,7 @@ public class LayananDao {
                             JSONObject jsonObject = (JSONObject) jsonArray.get(i);
                             int id = jsonObject.getInt("id");
                             String name = jsonObject.getString("name");
-                            double price = jsonObject.getDouble("id");
+                            double price = jsonObject.getDouble("price");
 
                             Layanan l = new Layanan(name,id,price);
                             layananList.add(l);
@@ -209,17 +210,29 @@ public class LayananDao {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                Toast.makeText(context, response.optString("message"), Toast.LENGTH_SHORT).show();
+                Log.i("LAYANAN",response.optString("message"));
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(context, error.getMessage(),
                         Toast.LENGTH_SHORT).show();
+                Log.e("LAYANAN ",error.getMessage());
             }
-        });
+        })
+        {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(context);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+        };
 
         //Disini proses penambahan request yang sudah kita buat ke reuest queue yang sudah dideklarasi
         queue.add(stringRequest);
@@ -228,15 +241,13 @@ public class LayananDao {
     public void deleteLayanan(int id){
         LayananPreferences layananPreferences = new LayananPreferences(context);
 
-        progressDialog.show();
         RequestQueue queue = Volley.newRequestQueue(context);
 
         //Memulai membuat permintaan request menghapus data ke jaringan
-        StringRequest stringRequest = new StringRequest(DELETE, LayananAPI.URL_DELETE+"/"+id, new Response.Listener<String>() {
+        StringRequest stringRequest = new StringRequest(DELETE, LayananAPI.URL_DELETE+id, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     JSONObject obj = new JSONObject(response);
                     Toast.makeText(context, obj.getString("message"), Toast.LENGTH_SHORT).show();
@@ -248,10 +259,20 @@ public class LayananDao {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(context, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
-        });
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(context);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+        };
 
         queue.add(stringRequest);
 

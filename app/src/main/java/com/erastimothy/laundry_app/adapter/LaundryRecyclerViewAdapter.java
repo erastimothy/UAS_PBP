@@ -68,7 +68,7 @@ public class LaundryRecyclerViewAdapter extends RecyclerView.Adapter<LaundryRecy
     @Override
     public void onBindViewHolder(@NonNull LaundryRecyclerViewAdapter.LaundryViewHolder holder, int position) {
         Laundry laundry = laundryList.get(position);
-        holder.noOrder_tv.setText(laundry.getId());
+        holder.noOrder_tv.setText(String.valueOf(laundry.getId()));
         holder.total_tv.setText(String.valueOf(laundry.getTotal()));
         holder.status_tv.setText(laundry.getStatus());
 
@@ -78,7 +78,7 @@ public class LaundryRecyclerViewAdapter extends RecyclerView.Adapter<LaundryRecy
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#ff6b6b"));
         else if(laundry.getStatus().trim().equalsIgnoreCase("Menunggu Penjemputan"))
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#ffe66d"));
-        else if(laundry.getStatus().trim().equalsIgnoreCase("Sedang  Diproses"))
+        else if(laundry.getStatus().trim().equalsIgnoreCase("Pesanan Sedang Diproses"))
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#00a8e8"));
     }
 
@@ -152,16 +152,18 @@ public class LaundryRecyclerViewAdapter extends RecyclerView.Adapter<LaundryRecy
                     layananTemp = layananList.get(i);
                 }
             }
+
             bundle.putString("alamat",laundry.getAddress());
             bundle.putString("biaya_antar",String.valueOf(laundry.getShippingcost()));
             bundle.putString("harga",String.valueOf(layananTemp.getHarga()));
             bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal()));
             bundle.putString("jenis",layananTemp.getName());
+            bundle.putString("service_id",String.valueOf(layananTemp.getId()));
             bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
             bundle.putString("order_id",String.valueOf(laundry.getId()));
             bundle.putString("nama",user.getName());
             bundle.putString("tanggal",laundry.getDate());
-            bundle.putString("uid",String.valueOf(laundry.getId()));
+            bundle.putString("id",String.valueOf(laundry.getId()));
             bundle.putString("status",laundry.getStatus());
             intent.putExtra("laundry",bundle);
 

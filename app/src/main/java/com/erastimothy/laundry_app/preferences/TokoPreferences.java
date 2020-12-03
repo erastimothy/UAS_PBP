@@ -41,7 +41,7 @@ public class TokoPreferences {
         Double longitute,latitute;
         int id;
 
-        id = tokoSP.getInt(KEY_ID,0);
+        id = Integer.parseInt(tokoSP.getString(KEY_ID,null));
         nama = tokoSP.getString(KEY_NAME,null);
         alamat = tokoSP.getString(KEY_ALAMAT,null);
         telp = tokoSP.getString(KEY_TELP,null);

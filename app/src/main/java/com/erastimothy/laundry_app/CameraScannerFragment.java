@@ -133,7 +133,8 @@ public class CameraScannerFragment extends Fragment {
                             bundle.putString("order_id",String.valueOf(laundry.getId()));
                             bundle.putString("nama",user.getName());
                             bundle.putString("tanggal",laundry.getDate());
-                            bundle.putString("uid",String.valueOf(laundry.getId()));
+                            bundle.putString("id",String.valueOf(laundry.getId()));
+                            bundle.putString("service_id",String.valueOf(layananTemp.getId()));
                             bundle.putString("status",laundry.getStatus());
                             intent.putExtra("laundry",bundle);
 

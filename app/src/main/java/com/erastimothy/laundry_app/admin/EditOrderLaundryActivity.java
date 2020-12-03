@@ -63,6 +63,7 @@ import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 import com.mapbox.turf.TurfMeasurement;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -76,6 +77,7 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
     private AutoCompleteTextView status_dd;
     private TokoPreferences tokoSP;
     private double harga = 0;
+    private int service_id;
     private Toko toko;
     private Laundry laundry;
     private LaundryDao laundryDao;
@@ -116,12 +118,12 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
         dropDownText = findViewById(R.id.jenis_dd);
         status_dd = findViewById(R.id.status_dd);
 
-        Laundry laundry = (Laundry) getIntent().getSerializableExtra("laundry");
         Bundle bundle = getIntent().getBundleExtra("laundry");
         String orderId = bundle.getString("order_id");
         String tanggal = bundle.getString("tanggal");
-        String user_order_id = bundle.getString("id");
+        String idLaundry = bundle.getString("id");
 
+        service_id = Integer.parseInt(bundle.getString("service_id"));
         title_tv.setText("#"+orderId);
         nama_et.setText(bundle.getString("nama"));
         alamat_et.setText(bundle.getString("alamat"));
@@ -133,19 +135,20 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
         total_et.setText(bundle.getString("total_pembayaran"));
 
 
-        //list items
-        String[] items = new String[]{
-                "Cuci Kiloan",
-                "Cuci Sprei Satuan",
-                "Cuci Boneka Satuan",
-        };
-
         String[] status_lists = new String[]{
                 "Pesanan Batal",
                 "Menunggu Penjemputan",
-                "Sedang  Diproses",
+                "Pesanan Sedang Diproses",
                 "Pesanan Selesai",
         };
+
+        //list items
+        List<String> items = new ArrayList<>();
+        if(layananList !=null){
+            for (int i=0 ;i < layananList.size();i++){
+                items.add(layananList.get(i).getName());
+            }
+        }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 EditOrderLaundryActivity.this,
@@ -166,14 +169,12 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if(validateForm()){
 
-                    Laundry laundry = new Laundry(0,1,user.getId(),Float.parseFloat(kuantitas_et.getText().toString()),Double.parseDouble(ongkir_et.getText().toString())
-                            , Double.parseDouble(total_et.getText().toString()),"Menunggu Penjemputan",alamat_et.getText().toString(),"null");
+                    Laundry laundry = new Laundry(Integer.parseInt(idLaundry),service_id,user.getId(),Float.parseFloat(kuantitas_et.getText().toString()),Double.parseDouble(ongkir_et.getText().toString())
+                            , Double.parseDouble(total_et.getText().toString()),status_dd.getText().toString(),alamat_et.getText().toString(),"null");
                     laundryDao = new LaundryDao(EditOrderLaundryActivity.this);
                     //laundryDao.reset();
-                    laundryDao.save(laundry);
+                    laundryDao.update(laundry,Integer.parseInt(idLaundry));
                     laundryDao.setAllDataLaundry();
-
-                    goToOrderDetail(laundry);
 
                     clearForm();
                 }
@@ -202,16 +203,13 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
         dropDownText.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                switch (adapter.getItem(i)) {
-                    case "Cuci Kiloan":
-                        harga = 5000;
-                        break;
-                    case "Cuci Sprei Satuan":
-                        harga = 9000;
-                        break;
-                    case "Cuci Boneka Satuan":
-                        harga = 15000;
-                        break;
+                if(layananList !=null){
+                    for (int j=0 ;j < layananList.size();j++){
+                        if(adapter.getItem(i).equalsIgnoreCase(layananList.get(j).getName())){
+                            harga = layananList.get(j).getHarga();
+                            service_id = layananList.get(j).getId();
+                        }
+                    }
                 }
                 if (!kuantitas_et.getText().toString().isEmpty()) {
                     hitungHarga();
@@ -224,34 +222,6 @@ public class EditOrderLaundryActivity extends AppCompatActivity {
 
     }
 
-    private void goToOrderDetail(Laundry laundry) {
-        Intent intent = new Intent(this, OrderDetailActivity.class);
-        Bundle bundle = new Bundle();
-
-        Layanan layananTemp = new Layanan();
-
-        for (int i =0 ;i< layananList.size(); i++){
-            if(layananList.get(i).getId() == laundry.getService_id()){
-                layananTemp = layananList.get(i);
-            }
-        }
-
-        bundle.putString("alamat",laundry.getAddress());
-        bundle.putString("biaya_antar",String.valueOf(laundry.getShippingcost()));
-        bundle.putString("harga",String.valueOf(layananTemp.getHarga()));
-        bundle.putString("total_pembayaran",String.valueOf(laundry.getTotal()));
-        bundle.putString("jenis",layananTemp.getName());
-        bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
-        bundle.putString("order_id",String.valueOf(laundry.getId()));
-        bundle.putString("nama",user.getName());
-        bundle.putString("tanggal",laundry.getDate());
-        bundle.putString("uid",String.valueOf(laundry.getId()));
-        bundle.putString("status",laundry.getStatus());
-        intent.putExtra("laundry",bundle);
-
-        startActivity(intent);
-        finish();
-    }
 
     private void clearForm(){
         TextInputEditText kuantitas_et = findViewById(R.id.quantity_et);

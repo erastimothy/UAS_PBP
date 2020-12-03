@@ -3,12 +3,15 @@ package com.erastimothy.laundry_app.dao;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -23,13 +26,7 @@ import com.erastimothy.laundry_app.preferences.LaundryPreferences;
 import com.erastimothy.laundry_app.preferences.LayananPreferences;
 import com.erastimothy.laundry_app.preferences.TokoPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
+import com.erastimothy.laundry_app.user.OrderDetailActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,10 +42,10 @@ import java.util.Random;
 
 import static com.android.volley.Request.Method.GET;
 import static com.android.volley.Request.Method.POST;
+import static com.android.volley.Request.Method.PUT;
 
 public class LaundryDao {
     private Activity activity;
-    private ProgressDialog progressDialog;
     private Laundry laundry;
     private SharedPreferences laundrySP;
     private SharedPreferences.Editor editor;
@@ -60,12 +57,9 @@ public class LaundryDao {
         activity = myActivity;
 
         laundryList = new ArrayList<>();
-        progressDialog = new ProgressDialog(activity);
-        progressDialog.setMessage("Loading...");
     }
     public void save(Laundry laundry){
 
-        progressDialog.show();
         RequestQueue queue = Volley.newRequestQueue(activity);
 
         //Memulai membuat permintaan request menghapus data ke jaringan
@@ -73,14 +67,35 @@ public class LaundryDao {
             @Override
             public void onResponse(String response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     //Mengubah response string menjadi object
                     JSONObject obj = new JSONObject(response);
                     if(obj.getString("message").equals("Add laundry Success")){
                         Toast.makeText(activity, "Orderan berhasil diterima !", Toast.LENGTH_SHORT).show();
+
+                        JSONObject data = obj.getJSONObject("data");
                         LaundryPreferences laundryPreferences = new LaundryPreferences(activity);
                         laundryPreferences.createLaundry(laundry);
+
+                        Intent intent = new Intent(activity, OrderDetailActivity.class);
+                        Bundle bundle = new Bundle();
+
+                        bundle.putString("alamat",data.getString("address"));
+                        bundle.putString("biaya_antar",data.getString("shippingcost"));
+                        bundle.putString("harga",obj.getJSONObject("service").getString("price"));
+                        bundle.putString("total_pembayaran",data.getString("total"));
+                        bundle.putString("jenis",obj.getJSONObject("service").getString("name"));
+                        bundle.putString("kuantitas", data.getString("quantity"));
+                        bundle.putString("order_id",data.getString("id"));
+                        bundle.putString("nama",obj.getJSONObject("user").getString("name"));
+                        bundle.putString("tanggal",data.getString("created_at"));
+                        bundle.putString("id",data.getString("id"));
+                        bundle.putString("from","order");
+                        bundle.putString("status",data.getString("status"));
+                        intent.putExtra("laundry",bundle);
+
+                        activity.startActivity(intent);
+                        activity.finish();
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -90,18 +105,22 @@ public class LaundryDao {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(activity, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }){
             @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(activity);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+            @Override
             protected Map<String, String> getParams()
             {
-                /*
-                    Disini adalah proses memasukan/mengirimkan parameter key dengan data value,
-                    dan nama key nya harus sesuai dengan parameter key yang diminta oleh jaringan
-                    API.
-                */
                 Map<String, String>  params = new HashMap<String, String>();
                 params.put("service_id",String.valueOf(laundry.getService_id()));
                 params.put("quantity", String.valueOf(laundry.getQuantity()));
@@ -111,6 +130,7 @@ public class LaundryDao {
 
                 return params;
             }
+
         };
 
         queue.add(stringRequest);
@@ -122,15 +142,11 @@ public class LaundryDao {
 
         //Meminta tanggapan string dari URL yang telah disediakan menggunakan method GET
 
-        progressDialog.setProgressStyle(android.app.ProgressDialog.STYLE_SPINNER);
-        progressDialog.show();
-
         final JsonObjectRequest stringRequest = new JsonObjectRequest(GET, LaundryAPI.URL_SELECT
                 , null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
-                progressDialog.dismiss();
                 try {
                     Log.d("Laundry", response.getString("message"));
 
@@ -163,19 +179,109 @@ public class LaundryDao {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                Toast.makeText(activity, response.optString("message"), Toast.LENGTH_SHORT).show();
+                Log.i("Laundry",response.optString("message"));
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 //Disini bagian jika response jaringan terdapat ganguan/error
-                progressDialog.dismiss();
                 Toast.makeText(activity, error.getMessage(),
                         Toast.LENGTH_SHORT).show();
             }
-        });
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(activity);
 
-        //Disini proses penambahan request yang sudah kita buat ke reuest queue yang sudah dideklarasi
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+        };
+
+        queue.add(stringRequest);
+
+    }
+
+    public void update(Laundry laundry,int id){
+
+        RequestQueue queue = Volley.newRequestQueue(activity);
+
+        //Memulai membuat permintaan request menghapus data ke jaringan
+        StringRequest stringRequest = new StringRequest(PUT, LaundryAPI.URL_UPDATE+id, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                try {
+                    //Mengubah response string menjadi object
+                    JSONObject obj = new JSONObject(response);
+                    if(obj.getString("message").equals("Update laundry Success")){
+                        Toast.makeText(activity, "Orderan berhasil diubah !", Toast.LENGTH_SHORT).show();
+
+                        JSONObject data = obj.getJSONObject("data");
+                        LaundryPreferences laundryPreferences = new LaundryPreferences(activity);
+                        laundryPreferences.createLaundry(laundry);
+
+                        Intent intent = new Intent(activity, OrderDetailActivity.class);
+                        Bundle bundle = new Bundle();
+
+                        bundle.putString("alamat",data.getString("address"));
+                        bundle.putString("biaya_antar",data.getString("shippingcost"));
+                        bundle.putString("harga",obj.getJSONObject("service").getString("price"));
+                        bundle.putString("total_pembayaran",data.getString("total"));
+                        bundle.putString("jenis",obj.getJSONObject("service").getString("name"));
+                        bundle.putString("kuantitas", data.getString("quantity"));
+                        bundle.putString("order_id",data.getString("id"));
+                        bundle.putString("nama",obj.getJSONObject("user").getString("name"));
+                        bundle.putString("tanggal",data.getString("created_at"));
+                        bundle.putString("id",data.getString("id"));
+                        bundle.putString("from","order");
+                        bundle.putString("status",data.getString("status"));
+                        intent.putExtra("laundry",bundle);
+
+                        activity.startActivity(intent);
+                        activity.finish();
+                    }
+                    Log.e("UPDATE LAUNDRY",obj.getString("message"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                Toast.makeText(activity, error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(activity);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<String, String>();
+                params.put("service_id",String.valueOf(laundry.getService_id()));
+                params.put("quantity", String.valueOf(laundry.getQuantity()));
+                params.put("shippingcost", String.valueOf(laundry.getShippingcost()));
+                params.put("total", String.valueOf(laundry.getTotal()));
+                params.put("address", laundry.getAddress());
+                params.put("status", laundry.getStatus());
+
+                return params;
+            }
+
+        };
+
         queue.add(stringRequest);
 
     }

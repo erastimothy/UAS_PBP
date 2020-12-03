@@ -13,6 +13,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.erastimothy.laundry_app.admin.AdminMainActivity;
+import com.erastimothy.laundry_app.dao.LayananDao;
 import com.erastimothy.laundry_app.dao.TokoDao;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
 import com.erastimothy.laundry_app.dao.UserDao;
@@ -78,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
         if(user.getName() != null){
             TokoDao tokoDao = new TokoDao(getApplicationContext());
             tokoDao.setTokoFromDatabase();
+
+            LayananDao layananDao = new LayananDao(getApplicationContext());
+            layananDao.setAllDataLayanan();
+
             Toast.makeText(MainActivity.this, "Welcome back "+user.getName(), Toast.LENGTH_SHORT).show();
             if(user.getRole_name()!=null && user.getRole_name().equalsIgnoreCase("admin")){
                 //owner redirect to owner page

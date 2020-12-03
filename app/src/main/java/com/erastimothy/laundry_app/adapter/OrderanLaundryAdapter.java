@@ -73,7 +73,7 @@ public class OrderanLaundryAdapter extends RecyclerView.Adapter<OrderanLaundryAd
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#ff6b6b"));
         else if(laundry.getStatus().trim().equalsIgnoreCase("Menunggu Penjemputan"))
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#ffe66d"));
-        else if(laundry.getStatus().trim().equalsIgnoreCase("Sedang  Diproses"))
+        else if(laundry.getStatus().trim().equalsIgnoreCase("Pesanan Sedang Diproses"))
             holder.noOrder_tv.setBackgroundColor(Color.parseColor("#00a8e8"));
     }
 
@@ -155,9 +155,10 @@ public class OrderanLaundryAdapter extends RecyclerView.Adapter<OrderanLaundryAd
             bundle.putString("jenis",layananTemp.getName());
             bundle.putString("kuantitas", String.valueOf(laundry.getQuantity()));
             bundle.putString("order_id",String.valueOf(laundry.getId()));
+            bundle.putString("service_id",String.valueOf(layananTemp.getId()));
             bundle.putString("nama",user.getName());
             bundle.putString("tanggal",laundry.getDate());
-            bundle.putString("uid",String.valueOf(laundry.getId()));
+            bundle.putString("id",String.valueOf(laundry.getId()));
             bundle.putString("status",laundry.getStatus());
             intent.putExtra("laundry",bundle);
 

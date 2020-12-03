@@ -35,7 +35,6 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         //set content view
         setContentView(R.layout.activity_order_detail);
-        Laundry laundry = (Laundry) getIntent().getSerializableExtra("laundry");
         Bundle bundle = getIntent().getBundleExtra("laundry");
         qr_iv = findViewById(R.id.qr_iv);
         orderid_tv = findViewById(R.id.orderid_tv);

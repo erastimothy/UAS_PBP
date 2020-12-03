@@ -3,6 +3,8 @@ package com.erastimothy.laundry_app.dao;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -14,17 +16,17 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.erastimothy.laundry_app.admin.PengaturanTokoActivity;
+import com.erastimothy.laundry_app.api.LaundryAPI;
 import com.erastimothy.laundry_app.api.TokoAPI;
+import com.erastimothy.laundry_app.model.Laundry;
 import com.erastimothy.laundry_app.model.Toko;
+import com.erastimothy.laundry_app.preferences.LaundryPreferences;
 import com.erastimothy.laundry_app.preferences.TokoPreferences;
 import com.erastimothy.laundry_app.preferences.UserPreferences;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.erastimothy.laundry_app.user.OrderDetailActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.android.volley.Request.Method.GET;
+import static com.android.volley.Request.Method.PUT;
 
 public class TokoDao {
     private Context context;
@@ -48,6 +51,63 @@ public class TokoDao {
     public void saveToko(Toko toko) {
         TokoPreferences tokoPreferences = new TokoPreferences(context);
         tokoPreferences.createToko(toko.getId(), toko.getName(), toko.getAlamat(), toko.getLongitude(), toko.getLatitude(), toko.getTelp());
+        updateToko(toko,toko.getId());
+    }
+
+    public void updateToko(Toko toko, int id){
+
+        RequestQueue queue = Volley.newRequestQueue(context);
+
+        //Memulai membuat permintaan request menghapus data ke jaringan
+        StringRequest stringRequest = new StringRequest(PUT, TokoAPI.URL_UPDATE+id, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //Disini bagian jika response jaringan berhasil tidak terdapat ganguan/error
+                try {
+                    //Mengubah response string menjadi object
+                    JSONObject obj = new JSONObject(response);
+                    if(obj.getString("message").equals("Update Store Success")){
+                        Toast.makeText(context, "Berhasil menyimpan perubahan!", Toast.LENGTH_SHORT).show();
+                    }
+                    Log.e("UPDATE TOKO",obj.getString("message"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Disini bagian jika response jaringan terdapat ganguan/error
+                Toast.makeText(context, error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                UserPreferences userSP = new UserPreferences(context);
+
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("Content-Type","application/x-www-form-urlencoded");
+                params.put("Accept","application/json");
+                params.put("Authorization", "Bearer " + userSP.getAccesToken());
+                return params;
+            }
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<String, String>();
+                params.put("name",toko.getName());
+                params.put("phoneNumber", toko.getTelp());
+                params.put("address", toko.getAlamat());
+                params.put("latitude", String.valueOf(toko.getLatitude()));
+                params.put("longitude", String.valueOf(toko.getLongitude()));
+
+                return params;
+            }
+
+        };
+
+        queue.add(stringRequest);
+
     }
 
     public void setTokoFromDatabase() {
@@ -74,7 +134,6 @@ public class TokoDao {
                     Double longitude = data.getDouble("longitude");
                     String address = data.getString("address");
                     tokoPreferences.createToko(id, name, address, longitude, latitude, phoneNumber);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
